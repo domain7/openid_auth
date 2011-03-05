@@ -93,8 +93,6 @@
 					$message = $e->getMessage();
 				}
 			}
-
-
 			$xml = new XMLElement('authentication');
 			$xml->setAttribute('status', $status);
 
@@ -124,7 +122,7 @@
 			}
 
 			require_once TOOLKIT. '/class.extensionmanager.php';
-			$em = new ExtensionManager(Symphony::Engine());
+			$em = new ExtensionManager(Frontend::instance());
 
 			$em->notifyMembers(
 				'openidAuthComplete', '/frontend/',	array(

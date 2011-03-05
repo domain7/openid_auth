@@ -1,0 +1,26 @@
+From 9c965df4a8e58830a4ae44ad53fd4fa792ebd060 Mon Sep 17 00:00:00 2001
+From: root <root@xxxxxxxxxxxxx.com>
+Date: Fri, 4 Mar 2011 16:36:05 -0800
+Subject: [PATCH] changed reference from $_SERVER["QUERY_STRING"] to $_SERVER["REQUEST_URI"]
+
+---
+ Auth/OpenID.php |    3 ++-
+ 1 files changed, 2 insertions(+), 1 deletions(-)
+
+diff --git a/Auth/OpenID.php b/Auth/OpenID.php
+index c9d9779..d34bc7f 100644
+--- a/Auth/OpenID.php
++++ b/Auth/OpenID.php
+@@ -160,7 +160,8 @@ class Auth_OpenID {
+           // going to emulate the behavior of some other environments
+           // by defaulting to GET and overwriting with POST if POST
+           // data is available.
+-          $data = Auth_OpenID::params_from_string($_SERVER['QUERY_STRING']);
++	  $url_parts = parse_url($_SERVER['REQUEST_URI']);
++	  $data = Auth_OpenID::params_from_string($url_parts['query']);
+ 
+           if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+             $str = file_get_contents('php://input');
+-- 
+1.5.6.3
+

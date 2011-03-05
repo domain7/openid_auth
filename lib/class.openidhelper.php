@@ -3,23 +3,34 @@
 	require_once "Auth/OpenID/Consumer.php";
 	require_once "Auth/OpenID/FileStore.php";
 	require_once "Auth/OpenID/SReg.php";
+	require_once "Auth/OpenID/google_discovery.php";
+	require_once "Auth/OpenID/AX.php";
 
 	class OpenIDHelper
 	{
 		public static function authenticate($openid_identifier, $trust_root, $return_to, $fields = null)
 		{
 			$consumer = self::getConsumer();
+			new GApps_OpenID_Discovery($consumer);
 			$auth_request = $consumer->begin($openid_identifier);
 
 			if (!$auth_request)
 				throw new Exception(__('Authentication error: not a valid OpenID.'));
 
+/*
 			if (is_array($fields)) $fields = (object) $fields;
 
 			$sreg_request = Auth_OpenID_SRegRequest::build($fields->required, $fields->optional);
 
 			if ($sreg_request)
 				$auth_request->addExtension($sreg_request);
+*/
+			$ax = new Auth_OpenID_AX_FetchRequest;
+			$ax->add( Auth_OpenID_AX_AttrInfo::make('http://axschema.org/contact/email',2,1,'email') );
+			$ax->add( Auth_OpenID_AX_AttrInfo::make('http://axschema.org/namePerson/first',1,1, 'firstname') );
+			$ax->add( Auth_OpenID_AX_AttrInfo::make('http://axschema.org/namePerson/last',1,1, 'lastname') );
+			$auth_request->addExtension($ax);
+
 
 			if ($auth_request->shouldSendRedirect())
 			{
@@ -35,16 +46,16 @@
 			$form_html = $auth_request->htmlMarkup(
 				$trust_root, $return_to, false, array('id' => $form_id)
 			);
-
 			if (Auth_OpenID::isFailure($form_html))
 				throw new Exception(__('Could not redirect to server: %s.', array($form_html->message)));
 
 			echo $form_html;
 		}
-		
+				
 		public static function completeAuthentication($return_to)
 		{
 			$consumer = self::getConsumer();
+			new GApps_OpenID_Discovery($consumer);
 			$response = $consumer->complete($return_to);
 
 			if ($response->status == Auth_OpenID_CANCEL)
@@ -56,7 +67,16 @@
 			// Success!
 			$openid_data = new StdClass();
 			$openid_data->identifier = $response->getDisplayIdentifier();
-			$openid_data->sreg_data  = Auth_OpenID_SRegResponse::fromSuccessResponse($response)->contents();
+			$ax = new Auth_OpenID_AX_FetchResponse();
+			if ($ax)
+				$ax = $ax->fromSuccessResponse($response);
+
+			$data = array();
+			foreach ($ax->data as $key => $val) {
+				$label = substr($key,strrpos($key,'/')+1);
+				$data[$label] = $val[0];
+			}
+			$openid_data->sreg_data = $data;
 
 			return $openid_data;
 		}
