@@ -1,5 +1,7 @@
 <?php
 
+	include_once(EXTENSIONS . '/members/extension.driver.php');
+
 	$path = ini_get('include_path');
 	$path = $path. ':'. EXTENSIONS. '/openid_auth/lib/php-openid';
 	ini_set('include_path', $path);
@@ -17,16 +19,19 @@
 		
 		public function getSubscribedDelegates(){
 			return array(
+
 				array(
 					'page' => '/frontend/',
 					'delegate' => 'openidAuthComplete',
 					'callback' => 'authenticationComplete'
 				),
+
 				array(
 					'page' => '/frontend/',
 					'delegate' => 'FrontendParamsResolve',
-					'callback' => 'addParamsToPage'
-				)
+					'callback' => 'startMemberSession'							
+				),
+			
 			);
 		}
 
@@ -41,7 +46,7 @@
 		/**
 		 * Add OpenID parameters to parameter pool
 		 */
-		public function addParamsToPage(array $context=array()){
+		public function startMemberSession(array $context=array()){
 
 			$cookie = new Cookie('openid', TWO_WEEKS, __SYM_COOKIE_PATH__);
 			$openid_cookie_data = $cookie->get('sreg-data');
@@ -50,7 +55,22 @@
 				$context['params']['openid-cookie-email'] = $openid_cookie_data[email];
 				$context['params']['openid-cookie-first'] = $openid_cookie_data[first];
 				$context['params']['openid-cookie-last'] = $openid_cookie_data[last];
+				$this->_member_email = $openid_cookie_data[email];
+	
+				$this->initialiseMemberObject($this->_member_email);
 			}
 
 		}
+
+		public function initialiseMemberObject($email){
+
+			$this->Member = extension_Members::findMemberIDFromEmail($email);
+			$member_id = $this->Member[0];
+			
+			// print_r($member_id); die();
+
+			return $this->Member;
+		}
+		
 	}
+		
