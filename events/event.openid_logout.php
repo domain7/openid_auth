@@ -33,5 +33,10 @@
 			$cookie->expire();
 			$member_cookie = new Cookie(Symphony::Configuration()->get('cookie-prefix', 'members'), TWO_WEEKS, __SYM_COOKIE_PATH__);
 			$member_cookie->expire();
+
+			$logout_redirect = Symphony::Configuration()->get('logout-redirect', 'openid-auth');
+			if($logout_redirect) {
+				redirect(URL . $logout_redirect);
+			}
 		}
 	}
